@@ -1,4 +1,14 @@
+using FilmesAPIAlura.Data;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+
 var builder = WebApplication.CreateBuilder(args);
+
+var connectionString = builder.Configuration.GetConnectionString("FilmeConnection");
+
+builder.Services.AddDbContext<FilmeContext>(opts =>
+    opts.UseSqlServer(connectionString));
+
 
 // Add services to the container.
 

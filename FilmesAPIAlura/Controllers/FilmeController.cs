@@ -1,4 +1,5 @@
-﻿using FilmesAPIAlura.Models;
+﻿using FilmesAPIAlura.Data;
+using FilmesAPIAlura.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FilmesAPIAlura.Controllers
@@ -8,29 +9,32 @@ namespace FilmesAPIAlura.Controllers
     [Route("[controller]")]
     public class FilmeController : ControllerBase
     {
-        private static List<Filme> filmes = new List<Filme>();
-        private static int id = 0;
+        private FilmeContext _context;
+
+        public FilmeController(FilmeContext context)
+        {
+            _context = context;
+        }
 
         [HttpPost]
         public IActionResult AdicionaFilme([FromBody] Filme filme)
         {
-            filme.Id = id++;
-            filmes.Add(filme);
-
-            return CreatedAtAction(nameof(ListarFilmePorId), 
+            _context.Filmes.Add(filme);
+            _context.SaveChanges();
+            return CreatedAtAction(nameof(ListarFilmePorId),
                 new { id = filme.Id }, filme);
         }
 
         [HttpGet]
         public IEnumerable<Filme> ListarFilmes([FromQuery] int skip = 0, int take = 50)
         {
-            return filmes.Skip(skip).Take(take);
+            return _context.Filmes.Skip(skip).Take(take);
         }
 
         [HttpGet("{id}")]
         public IActionResult ListarFilmePorId(int id)
         {
-            var filme = filmes.FirstOrDefault(x => x.Id == id);
+            var filme = _context.Filmes.FirstOrDefault(x => x.Id == id);
 
             if (filme is null)
             {
@@ -50,7 +54,8 @@ namespace FilmesAPIAlura.Controllers
                 return false;
             }
 
-            filmes.Remove(filme);
+            _context.Filmes.Remove(filme);
+            _context.SaveChanges();
             return true;
         }
 
@@ -70,8 +75,8 @@ namespace FilmesAPIAlura.Controllers
 
             bool delete = DeletarFilme(id);
 
-            filmes.Add(_filme);
-
+            _context.Filmes.Add(_filme);
+            _context.SaveChanges();
             return _filme;
         }
     }
