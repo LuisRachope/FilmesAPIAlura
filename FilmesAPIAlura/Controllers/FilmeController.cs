@@ -1,83 +1,88 @@
-﻿using FilmesAPIAlura.Data;
+﻿using AutoMapper;
+using FilmesAPIAlura.Data;
+using FilmesAPIAlura.Data.Dtos;
 using FilmesAPIAlura.Models;
 using Microsoft.AspNetCore.Mvc;
 
-namespace FilmesAPIAlura.Controllers
+namespace FilmesAPIAlura.Controllers;
+
+
+[ApiController]
+[Route("[controller]")]
+public class FilmeController : ControllerBase
 {
+    private FilmeContext _context;
+    private IMapper _mapper;
 
-    [ApiController]
-    [Route("[controller]")]
-    public class FilmeController : ControllerBase
+    public FilmeController(FilmeContext context, IMapper mapper)
     {
-        private FilmeContext _context;
+        _context = context;
+        _mapper = mapper;
+    }
 
-        public FilmeController(FilmeContext context)
+    [HttpPost]
+    public IActionResult AdicionaFilme([FromBody] CreateFilmeDto filmeDto)
+    {
+        Filme filme = _mapper.Map<Filme>(filmeDto);
+
+        _context.Filmes.Add(filme);
+        _context.SaveChanges();
+        return CreatedAtAction(nameof(ListarFilmePorId),
+            new { id = filme.Id }, filme);
+    }
+
+    [HttpGet]
+    public IEnumerable<Filme> ListarFilmes([FromQuery] int skip = 0, int take = 50)
+    {
+        return _context.Filmes.Skip(skip).Take(take);
+    }
+
+    [HttpGet("{id}")]
+    public IActionResult ListarFilmePorId(int id)
+    {
+        var filme = _context.Filmes.FirstOrDefault(x => x.Id == id);
+
+        if (filme is null)
         {
-            _context = context;
+            return NotFound();
         }
 
-        [HttpPost]
-        public IActionResult AdicionaFilme([FromBody] Filme filme)
+        return Ok(filme);
+    }
+
+    [HttpPost("{id}")]
+    public bool DeletarFilme(int id)
+    {
+        var filme = (Filme?)ListarFilmePorId(id);
+
+        if (filme is null)
         {
-            _context.Filmes.Add(filme);
-            _context.SaveChanges();
-            return CreatedAtAction(nameof(ListarFilmePorId),
-                new { id = filme.Id }, filme);
+            return false;
         }
 
-        [HttpGet]
-        public IEnumerable<Filme> ListarFilmes([FromQuery] int skip = 0, int take = 50)
+        _context.Filmes.Remove(filme);
+        _context.SaveChanges();
+        return true;
+    }
+
+    [HttpPut("{id}")]
+    public Filme? EditarFilme([FromBody] Filme filme, int id)
+    {
+        var _filme = (Filme?)ListarFilmePorId(id);
+
+        if (_filme is null)
         {
-            return _context.Filmes.Skip(skip).Take(take);
+            return null;
         }
 
-        [HttpGet("{id}")]
-        public IActionResult ListarFilmePorId(int id)
-        {
-            var filme = _context.Filmes.FirstOrDefault(x => x.Id == id);
+        _filme.Titulo = filme.Titulo;
+        _filme.Genero = filme.Genero;
+        _filme.Duracao = filme.Duracao;
 
-            if (filme is null)
-            {
-                return NotFound();
-            }
+        bool delete = DeletarFilme(id);
 
-            return Ok(filme);
-        }
-
-        [HttpPost("{id}")]
-        public bool DeletarFilme(int id)
-        {
-            var filme = (Filme?)ListarFilmePorId(id);
-
-            if (filme is null)
-            {
-                return false;
-            }
-
-            _context.Filmes.Remove(filme);
-            _context.SaveChanges();
-            return true;
-        }
-
-        [HttpPut("{id}")]
-        public Filme? EditarFilme([FromBody] Filme filme, int id)
-        {
-            var _filme = (Filme?)ListarFilmePorId(id);
-
-            if (_filme is null)
-            {
-                return null;
-            }
-
-            _filme.Titulo = filme.Titulo;
-            _filme.Genero = filme.Genero;
-            _filme.Duracao = filme.Duracao;
-
-            bool delete = DeletarFilme(id);
-
-            _context.Filmes.Add(_filme);
-            _context.SaveChanges();
-            return _filme;
-        }
+        _context.Filmes.Add(_filme);
+        _context.SaveChanges();
+        return _filme;
     }
 }

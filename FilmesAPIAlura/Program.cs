@@ -9,6 +9,8 @@ var connectionString = builder.Configuration.GetConnectionString("FilmeConnectio
 builder.Services.AddDbContext<FilmeContext>(opts =>
     opts.UseSqlServer(connectionString));
 
+builder.Services.
+    AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Add services to the container.
 
