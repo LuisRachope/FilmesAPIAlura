@@ -51,38 +51,35 @@ public class FilmeController : ControllerBase
     }
 
     [HttpPost("{id}")]
-    public bool DeletarFilme(int id)
+    public IActionResult DeletarFilme(int id)
     {
         var filme = (Filme?)ListarFilmePorId(id);
 
         if (filme is null)
         {
-            return false;
+            return NotFound();
         }
 
         _context.Filmes.Remove(filme);
         _context.SaveChanges();
-        return true;
+
+        return Ok(true);
     }
 
     [HttpPut("{id}")]
-    public Filme? EditarFilme([FromBody] Filme filme, int id)
+    public IActionResult EditarFilme(int id,
+        [FromBody] UpdateFilmeDto filmeDto)
     {
-        var _filme = (Filme?)ListarFilmePorId(id);
+        var filme = _context.Filmes.FirstOrDefault(filme => filme.Id == id);
 
-        if (_filme is null)
+        if (filme is null)
         {
-            return null;
+            return NotFound();
         }
 
-        _filme.Titulo = filme.Titulo;
-        _filme.Genero = filme.Genero;
-        _filme.Duracao = filme.Duracao;
-
-        bool delete = DeletarFilme(id);
-
-        _context.Filmes.Add(_filme);
+        _mapper.Map(filmeDto, filme);
         _context.SaveChanges();
-        return _filme;
+
+        return NoContent();
     }
 }
